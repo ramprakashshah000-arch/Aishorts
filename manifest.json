@@ -1,0 +1,16 @@
+{
+  "name": "AI Shorts Maker",
+  "short_name": "AI Shorts",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0d47a1",
+  "theme_color": "#0d47a1",
+  "icons": [
+    {
+      "src": "file_00000000b864820891f13b9882afe665.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}

@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Shorts Maker</title>
+<style>
+  body { margin: 0; font-family: sans-serif; background: #e8f4ff; color: #222; }
+  header { background: #0d47a1; color: white; padding: 14px; text-align: center; }
+  header h2 { margin: 0; }
+  header small { display: block; margin-bottom: 8px; opacity: 0.85; }
+  .langs button { padding: 6px 12px; margin: 0 3px; border: none; border-radius: 8px; background: #bbdefb; font-size: 14px; }
+  .langs button.on { background: white; font-weight: bold; }
+  .box { padding: 14px; }
+  .tools { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
+  .tools button { flex: 1 1 45%; padding: 12px 8px; font-size: 15px; border: 2px solid #5bb5f0; background: white; border-radius: 10px; }
+  .tools button.on { background: #5bb5f0; color: white; }
+  #topic { width: 100%; box-sizing: border-box; padding: 12px; font-size: 16px; border: 1px solid #5bb5f0; border-radius: 10px; }
+  #go { width: 100%; margin-top: 10px; padding: 13px; font-size: 17px; background: #0d47a1; color: white; border: none; border-radius: 10px; }
+  .res { background: white; padding: 12px; margin-top: 10px; border-radius: 10px; font-size: 16px; }
+  .res h4 { margin: 0 0 6px 0; color: #0d47a1; }
+  .res button, .all { margin-top: 8px; padding: 6px 12px; border: none; background: #5bb5f0; color: white; border-radius: 8px; font-size: 14px; }
+  .all { background: #0d47a1; padding: 10px 14px; }
+</style>
+</head>
+<body>
+<header>
+  <h2>AI Shorts Maker</h2>
+  <small>by Gautam</small>
+  <div class="langs">
+    <button id="l-en" onclick="setLang('en')">English</button>
+    <button id="l-ne" onclick="setLang('ne')">नेपाली</button>
+    <button id="l-hi" onclick="setLang('hi')">हिंदी</button>
+  </div>
+</header>
+<div class="box">
+  <div class="tools">
+    <button id="t-story" onclick="setTool('story')"></button>
+    <button id="t-title" onclick="setTool('title')"></button>
+    <button id="t-image" onclick="setTool('image')"></button>
+    <button id="t-hash" onclick="setTool('hash')"></button>
+  </div>
+  <input id="topic">
+  <button id="go" onclick="make()"></button>
+  <div id="out"></div>
+</div>
+
+<script>
+var lang = "hi";
+var tool = "story";
+
+var T = {
+  en: { story: "🎬 Storyboard", title: "🔥 Viral Titles", image: "🖼️ Image Prompts", hash: "#️⃣ Hashtags",
+        ph: "Write your story or topic, e.g. A monkey helps a farmer", go: "Make", copy: "Copy", done: "Copied!", all: "Copy everything", empty: "Please write a story or topic first.",
+        scene: "Scene", img: "Image prompt", vid: "Video prompt", vo: "Voice-over", head: "Your video plan" },
+  ne: { story: "🎬 स्टोरीबोर्ड", title: "🔥 भाइरल टाइटल", image: "🖼️ इमेज प्रम्प्ट", hash: "#️⃣ ह्यासट्याग",
+        ph: "आफ्नो कथा वा विषय लेख्नुहोस्, जस्तै: बाँदरले किसानलाई मद्दत गर्‍यो", go: "बनाउनुहोस्", copy: "कपी", done: "कपी भयो!", all: "सबै कपी गर्नुहोस्", empty: "पहिला कथा वा विषय लेख्नुहोस्।",
+        scene: "दृश्य", img: "इमेज प्रम्प्ट", vid: "भिडियो प्रम्प्ट", vo: "भ्वाइसओभर", head: "तपाईंको भिडियो योजना" },
+  hi: { story: "🎬 स्टोरीबोर्ड", title: "🔥 वायरल टाइटल", image: "🖼️ इमेज प्रॉम्प्ट", hash: "#️⃣ हैशटैग",
+        ph: "अपनी कहानी या विषय लिखो, जैसे: एक बंदर किसान की मदद करता है", go: "बनाओ", copy: "कॉपी", done: "कॉपी हो गया!", all: "सब कॉपी करो", empty: "पहले कहानी या विषय लिखो।",
+        scene: "सीन", img: "इमेज प्रॉम्प्ट", vid: "वीडियो प्रॉम्प्ट", vo: "वॉइसओवर", head: "आपकी वीडियो योजना" }
+};
+
+var S = {
+  en: [
+    function (x) { return "Opening: we meet the main character. Story: " + x; },
+    function (x) { return "Problem: something goes wrong in the story of " + x; },
+    function (x) { return "Action: the hero starts to solve it in " + x; },
+    function (x) { return "Twist: a surprising moment appears in " + x; },
+    function (x) { return "Ending: a happy, emotional end to " + x; }
+  ],
+  ne: [
+    function (x) { return "सुरुवात: मुख्य पात्रसँग भेट। कथा: " + x; },
+    function (x) { return "समस्या: " + x + " को कथामा केही गडबड हुन्छ"; },
+    function (x) { return "कार्य: नायकले " + x + " मा समाधान सुरु गर्छ"; },
+    function (x) { return "मोड: " + x + " मा अचम्मको क्षण आउँछ"; },
+    function (x) { return "अन्त्य: " + x + " को खुसी र भावुक अन्त्य"; }
+  ],
+  hi: [
+    function (x) { return "शुरुआत: मुख्य किरदार से मुलाक़ात। कहानी: " + x; },
+    function (x) { return "समस्या: " + x + " की कहानी में कुछ गड़बड़ होती है"; },
+    function (x) { return "एक्शन: हीरो " + x + " में हल निकालना शुरू करता है"; },
+    function (x) { return "ट्विस्ट: " + x + " में एक चौंकाने वाला पल आता है"; },
+    function (x) { return "अंत: " + x + " का खुशी और भावुकता भरा अंत"; }
+  ]
+};
+
+var MOOD = ["calm morning, soft light", "tense mood, dramatic light", "energetic, bright colors", "surprising moment, bold contrast", "warm emotional sunset"];
+var CAM = ["wide establishing shot", "close-up on face", "slow tracking shot", "quick zoom-in", "slow pull-back shot"];
+
+function titles(x) {
+  if (lang === "en") return [
+    "You Won't Believe This About " + x + "!",
+    "The Shocking Truth About " + x,
+    x + ": 5 Secrets Nobody Tells You",
+    "I Tried " + x + " For 7 Days, Here's What Happened",
+    "Stop Doing " + x + " Wrong!"
+  ];
+  if (lang === "ne") return [
+    x + " बारे यो कुरा तपाईंले थाहा पाउनुभएन!",
+    x + " को चकित पार्ने सत्य",
+    x + ": कसैले नभनेका ५ रहस्य",
+    "७ दिन " + x + " गरेर हेरें, के भयो?",
+    x + " यसरी नगर्नुहोस्!"
+  ];
+  return [
+    x + " के बारे में ये बात आपको नहीं पता!",
+    x + " का चौंकाने वाला सच",
+    x + ": 5 राज़ जो कोई नहीं बताता",
+    "7 दिन " + x + " करके देखा, क्या हुआ?",
+    x + " ऐसे मत करो!"
+  ];
+}
+
+function images(x) {
+  return [
+    "A cinematic, ultra-detailed photo about " + x + ", dramatic lighting, vertical 9:16, 4k",
+    "A colorful cartoon style illustration of " + x + ", bright colors, vertical 9:16",
+    "A realistic close-up shot of " + x + ", soft background blur, emotional mood, vertical 9:16",
+    "A funny 3D animated scene about " + x + ", Pixar style, vertical 9:16"
+  ];
+}
+
+function hashes(x) {
+  var w = x.replace(/\s+/g, "");
+  return ["#" + w + " #shorts #viral #trending #reels #fyp #youtubeshorts #explore #" + w + "tips #foryou"];
+}
+
+function story(x) {
+  var items = [];
+  for (var i = 0; i < 5; i++) {
+    var line = S[lang][i](x);
+    items.push({
+      head: T[lang].scene + " " + (i + 1),
+      text: line + "\n" +
+        T[lang].img + ": " + x + ", scene " + (i + 1) + ", " + MOOD[i] + ", vertical 9:16, highly detailed\n" +
+        T[lang].vid + ": " + x + ", " + CAM[i] + ", " + MOOD[i] + ", 5 seconds, smooth motion\n" +
+        T[lang].vo + ": " + line
+    });
+  }
+  return items;
+}
+
+function setLang(l) {
+  lang = l;
+  ["en", "ne", "hi"].forEach(function (k) {
+    document.getElementById("l-" + k).className = (k === l) ? "on" : "";
+  });
+  ["story", "title", "image", "hash"].forEach(function (k) {
+    document.getElementById("t-" + k).innerText = T[l][k];
+  });
+  document.getElementById("topic").placeholder = T[l].ph;
+  document.getElementById("go").innerText = T[l].go;
+  document.getElementById("out").innerHTML = "";
+}
+
+function setTool(t) {
+  tool = t;
+  ["story", "title", "image", "hash"].forEach(function (k) {
+    document.getElementById("t-" + k).className = (k === t) ? "on" : "";
+  });
+  document.getElementById("out").innerHTML = "";
+}
+
+function copyText(text, b, label) {
+  try { navigator.clipboard.writeText(text); } catch (e) {}
+  b.innerText = T[lang].done;
+  setTimeout(function () { b.innerText = label; }, 1500);
+}
+
+function make() {
+  var x = document.getElementById("topic").value.trim();
+  var out = document.getElementById("out");
+  out.innerHTML = "";
+  if (x === "") { alert(T[lang].empty); return; }
+
+  var items = [];
+  if (tool === "story") items = story(x);
+  else {
+    var list = (tool === "title") ? titles(x) : (tool === "image") ? images(x) : hashes(x);
+    list.forEach(function (t) { items.push({ head: "", text: t }); });
+  }
+
+  var everything = [];
+  items.forEach(function (it) {
+    var d = document.createElement("div");
+    d.className = "res";
+    if (it.head) {
+      var h = document.createElement("h4");
+      h.innerText = it.head;
+      d.appendChild(h);
+    }
+    var p = document.createElement("div");
+    p.style.whiteSpace = "pre-wrap";
+    p.innerText = it.text;
+    var b = document.createElement("button");
+    b.innerText = T[lang].copy;
+    b.onclick = function () { copyText(it.text, b, T[lang].copy); };
+    d.appendChild(p);
+    d.appendChild(b);
+    out.appendChild(d);
+    everything.push((it.head ? it.head + "\n" : "") + it.text);
+  });
+
+  var a = document.createElement("button");
+  a.className = "all";
+  a.innerText = T[lang].all;
+  a.onclick = function () { copyText(everything.join("\n\n"), a, T[lang].all); };
+  out.appendChild(a);
+}
+
+setLang("hi");
+setTool("story");
+</script>
+</body>
+</html>

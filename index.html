@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>AI Shorts Maker</title>
-  <link rel="manifest" href="manifest.json">
+<link rel="manifest" href="manifest.json">
 <link rel="icon" href="file_00000000b864820891f13b9882afe665.png">
 <style>
   body { margin: 0; font-family: sans-serif; background: #e8f4ff; color: #222; }
@@ -17,12 +17,13 @@
   .tools { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; }
   .tools button { flex: 1 1 45%; padding: 12px 8px; font-size: 15px; border: 2px solid #5bb5f0; background: white; border-radius: 10px; }
   .tools button.on { background: #5bb5f0; color: white; }
-  #topic { width: 100%; box-sizing: border-box; padding: 12px; font-size: 16px; border: 1px solid #5bb5f0; border-radius: 10px; }
-  #go { width: 100%; margin-top: 10px; padding: 13px; font-size: 17px; background: #0d47a1; color: white; border: none; border-radius: 10px; }
+  input, select { width: 100%; box-sizing: border-box; padding: 12px; font-size: 16px; border: 1px solid #5bb5f0; border-radius: 10px; margin-bottom: 8px; background: white; }
+  #go { width: 100%; margin-top: 4px; padding: 13px; font-size: 17px; background: #0d47a1; color: white; border: none; border-radius: 10px; }
   .res { background: white; padding: 12px; margin-top: 10px; border-radius: 10px; font-size: 16px; }
   .res h4 { margin: 0 0 6px 0; color: #0d47a1; }
   .res button, .all { margin-top: 8px; padding: 6px 12px; border: none; background: #5bb5f0; color: white; border-radius: 8px; font-size: 14px; }
   .all { background: #0d47a1; padding: 10px 14px; }
+  #extra { display: none; }
 </style>
 </head>
 <body>
@@ -43,6 +44,11 @@
     <button id="t-hash" onclick="setTool('hash')"></button>
   </div>
   <input id="topic">
+  <div id="extra">
+    <input id="hero">
+    <input id="place">
+    <select id="mood"></select>
+  </div>
   <button id="go" onclick="make()"></button>
   <div id="out"></div>
 </div>
@@ -53,42 +59,49 @@ var tool = "story";
 
 var T = {
   en: { story: "🎬 Storyboard", title: "🔥 Viral Titles", image: "🖼️ Image Prompts", hash: "#️⃣ Hashtags",
-        ph: "Write your story or topic, e.g. A monkey helps a farmer", go: "Make", copy: "Copy", done: "Copied!", all: "Copy everything", empty: "Please write a story or topic first.",
-        scene: "Scene", img: "Image prompt", vid: "Video prompt", vo: "Voice-over", head: "Your video plan" },
+        ph: "Your story or topic, e.g. A monkey helps a farmer", hero: "Main character name (optional)", place: "Place (optional)",
+        go: "Make", copy: "Copy", done: "Copied!", all: "Copy everything", empty: "Please write a story or topic first.",
+        scene: "Scene", img: "Image prompt", vid: "Video prompt", vo: "Voice-over",
+        moods: ["Happy", "Suspense", "Emotional", "Comedy"], defHero: "the hero", defPlace: "a quiet village" },
   ne: { story: "🎬 स्टोरीबोर्ड", title: "🔥 भाइरल टाइटल", image: "🖼️ इमेज प्रम्प्ट", hash: "#️⃣ ह्यासट्याग",
-        ph: "आफ्नो कथा वा विषय लेख्नुहोस्, जस्तै: बाँदरले किसानलाई मद्दत गर्‍यो", go: "बनाउनुहोस्", copy: "कपी", done: "कपी भयो!", all: "सबै कपी गर्नुहोस्", empty: "पहिला कथा वा विषय लेख्नुहोस्।",
-        scene: "दृश्य", img: "इमेज प्रम्प्ट", vid: "भिडियो प्रम्प्ट", vo: "भ्वाइसओभर", head: "तपाईंको भिडियो योजना" },
+        ph: "आफ्नो कथा वा विषय, जस्तै: बाँदरले किसानलाई मद्दत गर्‍यो", hero: "मुख्य पात्रको नाम (ऐच्छिक)", place: "ठाउँ (ऐच्छिक)",
+        go: "बनाउनुहोस्", copy: "कपी", done: "कपी भयो!", all: "सबै कपी गर्नुहोस्", empty: "पहिला कथा वा विषय लेख्नुहोस्।",
+        scene: "दृश्य", img: "इमेज प्रम्प्ट", vid: "भिडियो प्रम्प्ट", vo: "भ्वाइसओभर",
+        moods: ["खुसी", "सस्पेन्स", "भावुक", "कमेडी"], defHero: "नायक", defPlace: "एउटा शान्त गाउँ" },
   hi: { story: "🎬 स्टोरीबोर्ड", title: "🔥 वायरल टाइटल", image: "🖼️ इमेज प्रॉम्प्ट", hash: "#️⃣ हैशटैग",
-        ph: "अपनी कहानी या विषय लिखो, जैसे: एक बंदर किसान की मदद करता है", go: "बनाओ", copy: "कॉपी", done: "कॉपी हो गया!", all: "सब कॉपी करो", empty: "पहले कहानी या विषय लिखो।",
-        scene: "सीन", img: "इमेज प्रॉम्प्ट", vid: "वीडियो प्रॉम्प्ट", vo: "वॉइसओवर", head: "आपकी वीडियो योजना" }
+        ph: "अपनी कहानी या विषय, जैसे: एक बंदर किसान की मदद करता है", hero: "मुख्य किरदार का नाम (ज़रूरी नहीं)", place: "जगह (ज़रूरी नहीं)",
+        go: "बनाओ", copy: "कॉपी", done: "कॉपी हो गया!", all: "सब कॉपी करो", empty: "पहले कहानी या विषय लिखो।",
+        scene: "सीन", img: "इमेज प्रॉम्प्ट", vid: "वीडियो प्रॉम्प्ट", vo: "वॉइसओवर",
+        moods: ["खुशी", "सस्पेंस", "भावुक", "कॉमेडी"], defHero: "हीरो", defPlace: "एक शांत गाँव" }
 };
 
-var S = {
-  en: [
-    function (x) { return "Opening: we meet the main character. Story: " + x; },
-    function (x) { return "Problem: something goes wrong in the story of " + x; },
-    function (x) { return "Action: the hero starts to solve it in " + x; },
-    function (x) { return "Twist: a surprising moment appears in " + x; },
-    function (x) { return "Ending: a happy, emotional end to " + x; }
-  ],
-  ne: [
-    function (x) { return "सुरुवात: मुख्य पात्रसँग भेट। कथा: " + x; },
-    function (x) { return "समस्या: " + x + " को कथामा केही गडबड हुन्छ"; },
-    function (x) { return "कार्य: नायकले " + x + " मा समाधान सुरु गर्छ"; },
-    function (x) { return "मोड: " + x + " मा अचम्मको क्षण आउँछ"; },
-    function (x) { return "अन्त्य: " + x + " को खुसी र भावुक अन्त्य"; }
-  ],
-  hi: [
-    function (x) { return "शुरुआत: मुख्य किरदार से मुलाक़ात। कहानी: " + x; },
-    function (x) { return "समस्या: " + x + " की कहानी में कुछ गड़बड़ होती है"; },
-    function (x) { return "एक्शन: हीरो " + x + " में हल निकालना शुरू करता है"; },
-    function (x) { return "ट्विस्ट: " + x + " में एक चौंकाने वाला पल आता है"; },
-    function (x) { return "अंत: " + x + " का खुशी और भावुकता भरा अंत"; }
-  ]
-};
-
-var MOOD = ["calm morning, soft light", "tense mood, dramatic light", "energetic, bright colors", "surprising moment, bold contrast", "warm emotional sunset"];
+var MOOD_EN = ["happy, bright and warm", "suspenseful, dark and tense", "emotional, soft and golden", "funny, colorful and playful"];
 var CAM = ["wide establishing shot", "close-up on face", "slow tracking shot", "quick zoom-in", "slow pull-back shot"];
+var LIGHT = ["soft morning light", "dramatic shadows", "bright daylight", "high-contrast light", "warm sunset glow"];
+
+function lines(x, h, p, m) {
+  if (lang === "en") return [
+    "We meet " + h + " in " + p + ". The story begins: " + x + ".",
+    "A problem appears, and " + h + " is in trouble.",
+    "Now " + h + " takes action and tries to fix it.",
+    "A surprising twist changes everything for " + h + ".",
+    "The story ends with a " + T.en.moods[m].toLowerCase() + " finish for " + h + "."
+  ];
+  if (lang === "ne") return [
+    p + " मा " + h + " सँग भेट हुन्छ। कथा सुरु: " + x + "।",
+    "एउटा समस्या आउँछ, र " + h + " मुस्किलमा पर्छ।",
+    "अब " + h + " ले हिम्मत गरेर समाधान खोज्न थाल्छ।",
+    "अचानक एउटा अचम्मको मोड आउँछ र सबै कुरा बदलिन्छ।",
+    h + " को कथा " + T.ne.moods[m] + " अन्त्यसँग टुङ्गिन्छ।"
+  ];
+  return [
+    p + " में " + h + " से मुलाक़ात होती है। कहानी शुरू: " + x + "।",
+    "एक मुसीबत आती है, और " + h + " मुश्किल में पड़ जाता है।",
+    "अब " + h + " हिम्मत करके हल निकालने लगता है।",
+    "अचानक एक चौंकाने वाला मोड़ आता है और सब कुछ बदल जाता है।",
+    h + " की कहानी " + T.hi.moods[m] + " अंत के साथ पूरी होती है।"
+  ];
+}
 
 function titles(x) {
   if (lang === "en") return [
@@ -129,15 +142,18 @@ function hashes(x) {
 }
 
 function story(x) {
+  var h = document.getElementById("hero").value.trim() || T[lang].defHero;
+  var p = document.getElementById("place").value.trim() || T[lang].defPlace;
+  var m = document.getElementById("mood").selectedIndex;
+  var ls = lines(x, h, p, m);
   var items = [];
   for (var i = 0; i < 5; i++) {
-    var line = S[lang][i](x);
     items.push({
       head: T[lang].scene + " " + (i + 1),
-      text: line + "\n" +
-        T[lang].img + ": " + x + ", scene " + (i + 1) + ", " + MOOD[i] + ", vertical 9:16, highly detailed\n" +
-        T[lang].vid + ": " + x + ", " + CAM[i] + ", " + MOOD[i] + ", 5 seconds, smooth motion\n" +
-        T[lang].vo + ": " + line
+      text: ls[i] + "\n" +
+        T[lang].img + ": " + h + " in " + p + ", " + x + ", scene " + (i + 1) + ", " + MOOD_EN[m] + ", " + LIGHT[i] + ", vertical 9:16, highly detailed\n" +
+        T[lang].vid + ": " + h + " in " + p + ", " + CAM[i] + ", " + MOOD_EN[m] + ", " + LIGHT[i] + ", 5 seconds, smooth motion\n" +
+        T[lang].vo + ": " + ls[i]
     });
   }
   return items;
@@ -152,7 +168,18 @@ function setLang(l) {
     document.getElementById("t-" + k).innerText = T[l][k];
   });
   document.getElementById("topic").placeholder = T[l].ph;
+  document.getElementById("hero").placeholder = T[l].hero;
+  document.getElementById("place").placeholder = T[l].place;
   document.getElementById("go").innerText = T[l].go;
+  var sel = document.getElementById("mood");
+  var cur = sel.selectedIndex < 0 ? 0 : sel.selectedIndex;
+  sel.innerHTML = "";
+  T[l].moods.forEach(function (name) {
+    var o = document.createElement("option");
+    o.innerText = name;
+    sel.appendChild(o);
+  });
+  sel.selectedIndex = cur;
   document.getElementById("out").innerHTML = "";
 }
 
@@ -161,6 +188,7 @@ function setTool(t) {
   ["story", "title", "image", "hash"].forEach(function (k) {
     document.getElementById("t-" + k).className = (k === t) ? "on" : "";
   });
+  document.getElementById("extra").style.display = (t === "story") ? "block" : "none";
   document.getElementById("out").innerHTML = "";
 }
 
